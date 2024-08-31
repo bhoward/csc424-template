@@ -1,0 +1,20 @@
+sudo: false
+
+# cache stuff, hopefully shortening build times
+cache:
+  directories:
+  - $HOME/.ivy2
+  - $HOME/.sbt/boot
+  - $HOME/.sbt/launchers
+
+jdk:
+- oraclejdk8
+- openjdk11
+
+language: scala
+script:
+  - sbt compile
+
+before_cache:
+  - find $HOME/.sbt -name "*.lock" | xargs rm
+  - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
