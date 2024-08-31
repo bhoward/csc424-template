@@ -19,8 +19,15 @@ It is based on a template project designed for people using the Doodle library f
       2. Search for Command Prompt.
       3. Click that to open it. 
       4. Go to this directory: `cd <path to>/csc424-template` Replace `<path to>` with your directory path.
+
+3. If you do not already have Java and Node installed, see [https://adoptium.net/temurin/releases/] and [https://nodejs.org/en/download/package-manager/current].
+
 3. Run `sbt` (if you already have SBT installed), `./sbt.sh` (OS X and Linux) or `sbt.bat` (Windows) to start SBT.
-4. Type `run` in SBT to run the @main method, or `console` if you want to explore in an interactive console, or `test` to run unit tests
-5. You can also run this in a GitHub Codespace.
+4. Type `run` in SBT to run the @main method, or `console` if you want to explore in an interactive console, or `test` to run Scala unit tests.
+
+5. To run JavaScript unit tests, type `npm test` at the terminal prompt (_not_ the SBT prompt; use `exit` to get out of SBT if it is running).
+6. To run a JavaScript file with a main method, run `node <filename>`. For example, `node src/main/js/assignment1/Group.js`.
+
+7. You can also run this repository in a GitHub Codespace.
 
 [creative-scala]: https://creativescala.org/
