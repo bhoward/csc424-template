@@ -20,7 +20,7 @@ It is based on a template project designed for people using the Doodle library f
       3. Click that to open it. 
       4. Go to this directory: `cd <path to>/csc424-template` Replace `<path to>` with your directory path.
 
-3. If you do not already have Java and Node installed, see [https://adoptium.net/temurin/releases/] and [https://nodejs.org/en/download/package-manager/current].
+3. If you do not already have Java and Node installed, see https://adoptium.net/temurin/releases/ and https://nodejs.org/en/download/package-manager/current.
 
 3. Run `sbt` (if you already have SBT installed), `./sbt.sh` (OS X and Linux) or `sbt.bat` (Windows) to start SBT.
 4. Type `run` in SBT to run the @main method, or `console` if you want to explore in an interactive console, or `test` to run Scala unit tests.
