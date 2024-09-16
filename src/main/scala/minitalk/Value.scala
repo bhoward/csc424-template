@@ -1,5 +1,7 @@
 package minitalk
 
+import C.*
+
 case class Message(selector: String, args: Seq[Value])
 
 /**
@@ -8,14 +10,18 @@ case class Message(selector: String, args: Seq[Value])
   * standard class library is implemented here.
   */
 trait Value:
-  def receive(msg: Message): Value = {
+  def receive(msg: Message): C[Value] = {
     msg match
       case Message("~=", Seq(that)) =>
-        this.receive(Message("=", Seq(that)))
-            .receive(Message("not", Nil))
+        for
+          equal <- this.receive(Message("=", Seq(that)))
+          result <- equal.receive(Message("not", Nil))
+        yield result
       case Message(">=", Seq(that)) =>
-        this.receive(Message("<", Seq(that)))
-            .receive(Message("not", Nil))
+        for
+          less <- this.receive(Message("<", Seq(that)))
+          result <- less.receive(Message("not", Nil))
+        yield result
       case Message(">", Seq(that)) =>
         that.receive(Message("<", Seq(this)))
       case Message("<=", Seq(that)) =>
@@ -23,7 +29,7 @@ trait Value:
 
       case _ =>
         println("Unknown message: " + msg + " received by " + this)
-        NullValue
+        pure(NullValue)
   }
 
 case object NullValue extends Value:
@@ -32,59 +38,59 @@ case object NullValue extends Value:
 case class IntValue(number: Int) extends Value:
   override def toString: String = number.toString
 
-  override def receive(msg: Message): Value = {
+  override def receive(msg: Message): C[Value] = {
     msg match
       case Message("+", Seq(IntValue(that))) =>
-        IntValue(number + that)
+        pure(IntValue(number + that))
       case Message("+", Seq(RealValue(that))) =>
-        RealValue(number + that)
+        pure(RealValue(number + that))
 
       case Message("-", Seq(IntValue(that))) =>
-        IntValue(number - that)
+        pure(IntValue(number - that))
       case Message("-", Seq(RealValue(that))) =>
-        RealValue(number - that)
+        pure(RealValue(number - that))
 
       case Message("*", Seq(IntValue(that))) =>
-        IntValue(number * that)
+        pure(IntValue(number * that))
       case Message("*", Seq(RealValue(that))) =>
-        RealValue(number * that)
+        pure(RealValue(number * that))
 
       case Message("/", Seq(IntValue(that))) =>
-        IntValue(number / that)
+        pure(IntValue(number / that))
       case Message("/", Seq(RealValue(that))) =>
-        RealValue(number / that)
+        pure(RealValue(number / that))
 
       case Message("%", Seq(IntValue(that))) =>
-        IntValue(number % that)
+        pure(IntValue(number % that))
       case Message("%", Seq(RealValue(that))) =>
-        RealValue(number % that)
+        pure(RealValue(number % that))
 
       case Message("**", Seq(IntValue(that))) =>
-        IntValue(math.round(math.pow(number, that)).toInt)
+        pure(IntValue(math.round(math.pow(number, that)).toInt))
       case Message("**", Seq(RealValue(that))) =>
-        RealValue(math.pow(number, that))
+        pure(RealValue(math.pow(number, that)))
 
       case Message("sqrt", Nil) =>
-        RealValue(math.sqrt(number))
+        pure(RealValue(math.sqrt(number)))
 
       case Message("asInteger", Nil) =>
-        this
+        pure(this)
       case Message("asFloat", Nil) =>
-        RealValue(number)
+        pure(RealValue(number))
       case Message("asCharacter", Nil) =>
-        CharValue(number.toChar)
+        pure(CharValue(number.toChar))
       case Message("asString", Nil) =>
-        StrValue(number.toString)
+        pure(StrValue(number.toString))
 
       case Message("=", Seq(IntValue(that))) =>
-        BoolValue(number == that)
+        pure(BoolValue(number == that))
       case Message("=", Seq(RealValue(that))) =>
-        BoolValue(number == that)
+        pure(BoolValue(number == that))
 
       case Message("<", Seq(IntValue(that))) =>
-        BoolValue(number < that)
+        pure(BoolValue(number < that))
       case Message("<", Seq(RealValue(that))) =>
-        BoolValue(number < that)
+        pure(BoolValue(number < that))
 
       case _ =>
         super.receive(msg)
@@ -93,57 +99,57 @@ case class IntValue(number: Int) extends Value:
 case class RealValue(number: Double) extends Value:
   override def toString: String = number.toString
 
-  override def receive(msg: Message): Value = {
+  override def receive(msg: Message): C[Value] = {
     msg match
       case Message("+", Seq(IntValue(that))) =>
-        RealValue(number + that)
+        pure(RealValue(number + that))
       case Message("+", Seq(RealValue(that))) =>
-        RealValue(number + that)
+        pure(RealValue(number + that))
 
       case Message("-", Seq(IntValue(that))) =>
-        RealValue(number - that)
+        pure(RealValue(number - that))
       case Message("-", Seq(RealValue(that))) =>
-        RealValue(number - that)
+        pure(RealValue(number - that))
 
       case Message("*", Seq(IntValue(that))) =>
-        RealValue(number * that)
+        pure(RealValue(number * that))
       case Message("*", Seq(RealValue(that))) =>
-        RealValue(number * that)
+        pure(RealValue(number * that))
 
       case Message("/", Seq(IntValue(that))) =>
-        RealValue(number / that)
+        pure(RealValue(number / that))
       case Message("/", Seq(RealValue(that))) =>
-        RealValue(number / that)
+        pure(RealValue(number / that))
 
       case Message("%", Seq(IntValue(that))) =>
-        RealValue(number % that)
+        pure(RealValue(number % that))
       case Message("%", Seq(RealValue(that))) =>
-        RealValue(number % that)
+        pure(RealValue(number % that))
 
       case Message("**", Seq(IntValue(that))) =>
-        RealValue(math.pow(number, that))
+        pure(RealValue(math.pow(number, that)))
       case Message("**", Seq(RealValue(that))) =>
-        RealValue(math.pow(number, that))
+        pure(RealValue(math.pow(number, that)))
 
       case Message("sqrt", Nil) =>
-        RealValue(math.sqrt(number))
+        pure(RealValue(math.sqrt(number)))
 
       case Message("asInteger", Nil) =>
-        IntValue(math.round(number).toInt)
+        pure(IntValue(math.round(number).toInt))
       case Message("asFloat", Nil) =>
-        this
+        pure(this)
       case Message("asString", Nil) =>
-        StrValue(number.toString)
+        pure(StrValue(number.toString))
 
       case Message("=", Seq(IntValue(that))) =>
-        BoolValue(number == that)
+        pure(BoolValue(number == that))
       case Message("=", Seq(RealValue(that))) =>
-        BoolValue(number == that)
+        pure(BoolValue(number == that))
 
       case Message("<", Seq(IntValue(that))) =>
-        BoolValue(number < that)
+        pure(BoolValue(number < that))
       case Message("<", Seq(RealValue(that))) =>
-        BoolValue(number < that)
+        pure(BoolValue(number < that))
 
       case _ =>
         super.receive(msg)
@@ -152,23 +158,23 @@ case class RealValue(number: Double) extends Value:
 case class CharValue(char: Char) extends Value:
   override def toString: String = char.toString
 
-  override def receive(msg: Message): Value = {
+  override def receive(msg: Message): C[Value] = {
     msg match
       case Message("+", Seq(StrValue(that))) =>
-        StrValue(char + that)
+        pure(StrValue(char + that))
 
       case Message("*", Seq(IntValue(that))) =>
-        StrValue(char.toString * that)
+        pure(StrValue(char.toString * that))
 
       case Message("asInteger", Nil) =>
-        IntValue(char.toInt)
+        pure(IntValue(char.toInt))
       case Message("asString", Nil) =>
-        StrValue(char.toString)
+        pure(StrValue(char.toString))
 
       case Message("=", Seq(CharValue(that))) =>
-        BoolValue(char == that)
+        pure(BoolValue(char == that))
       case Message("<", Seq(CharValue(that))) =>
-        BoolValue(char < that)
+        pure(BoolValue(char < that))
 
       case _ =>
         super.receive(msg)
@@ -177,32 +183,32 @@ case class CharValue(char: Char) extends Value:
 case class StrValue(string: String) extends Value:
   override def toString: String = string
 
-  override def receive(msg: Message): Value = {
+  override def receive(msg: Message): C[Value] = {
     msg match
       case Message("+", Seq(CharValue(that))) =>
-        StrValue(string + that)
+        pure(StrValue(string + that))
       case Message("+", Seq(StrValue(that))) =>
-        StrValue(string + that)
+        pure(StrValue(string + that))
 
       case Message("*", Seq(IntValue(that))) =>
-        StrValue(string * that)
+        pure(StrValue(string * that))
 
       case Message("charAt:", Seq(IntValue(that))) =>
-        CharValue(string(that))
+        pure(CharValue(string(that)))
       case Message("size", Nil) =>
-        IntValue(string.length)
+        pure(IntValue(string.length))
 
       case Message("asInteger", Nil) =>
-        IntValue(string.toDouble.toInt)
+        pure(IntValue(string.toDouble.toInt))
       case Message("asFloat", Nil) =>
-        RealValue(string.toDouble)
+        pure(RealValue(string.toDouble))
       case Message("asString", Nil) =>
-        this
+        pure(this)
 
       case Message("=", Seq(StrValue(that))) =>
-        BoolValue(string == that)
+        pure(BoolValue(string == that))
       case Message("<", Seq(StrValue(that))) =>
-        BoolValue(string < that)
+        pure(BoolValue(string < that))
 
       case _ =>
         super.receive(msg)
@@ -218,38 +224,38 @@ object BoolValue:
 case object TrueValue extends BoolValue:
   override def toString: String = "true"
 
-  override def receive(msg: Message): Value = {
+  override def receive(msg: Message): C[Value] = {
     msg match
       // "and": true & x is x, for any x (not just booleans)
       case Message("&", Seq(that)) =>
-        that
+        pure(that)
       // "or": true | x is true, for any x
       case Message("|", Seq(_)) =>
-        this
+        pure(this)
       case Message("not", Nil) =>
-        FalseValue
+        pure(FalseValue)
 
       case Message("asInteger", Nil) =>
-        IntValue(1)
+        pure(IntValue(1))
       case Message("asString", Nil) =>
-        StrValue("true")
+        pure(StrValue("true"))
 
       case Message("=", Seq(TrueValue)) =>
-        TrueValue
+        pure(TrueValue)
       case Message("=", Seq(FalseValue)) =>
-        FalseValue
+        pure(FalseValue)
       // Note that we consider "false" to be less than "true"
       case Message("<", Seq(TrueValue)) =>
-        FalseValue
+        pure(FalseValue)
       case Message("<", Seq(FalseValue)) =>
-        FalseValue
+        pure(FalseValue)
 
       case Message("ifTrue:", Seq(trueBlock)) =>
         trueBlock.receive(Message("value", Nil))
       case Message("ifTrue:ifFalse:", Seq(trueBlock, falseBlock)) =>
         trueBlock.receive(Message("value", Nil))
       case Message("ifFalse:", Seq(falseBlock)) =>
-        NullValue
+        pure(NullValue)
       case Message("ifFalse:ifTrue:", Seq(falseBlock, trueBlock)) =>
         trueBlock.receive(Message("value", Nil))
 
@@ -260,7 +266,7 @@ case object TrueValue extends BoolValue:
 case object FalseValue extends BoolValue:
   override def toString: String = "false"
 
-  override def receive(msg: Message): Value = {
+  override def receive(msg: Message): C[Value] = {
     msg match
       // Removed for assignment 2
       
@@ -268,13 +274,13 @@ case object FalseValue extends BoolValue:
         super.receive(msg)
   }
 
-case class BlockValue[M[_]](body: () => M[Value]) extends Value:
+case class BlockValue(body: () => C[Value]) extends Value:
   override def toString: String = "<block>"
 
-  override def receive(msg: Message): Value = {
+  override def receive(msg: Message): C[Value] = {
     msg match
       case Message("value", Nil) =>
-        body(); ??? // TODO all receives return M[Value]?
+        body()
 
       case _ =>
         super.receive(msg)

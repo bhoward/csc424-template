@@ -13,22 +13,7 @@ import scala.annotation.tailrec
     "nil" -> NullValue
   )
 
-  type M[T] = Either[String, T]
-  object M:
-    def pure[T](t: T): M[T] = Right(t)
-
-    def lookup[T](name: String, default: T) =
-      pure(predef.getOrElse(name, default))
-
-    // extension [T](m: M[T])
-    //   def map[U](f: T => U): M[U] = f(m)
-
-    //   def flatMap[U](f: T => M[U]): M[U] = f(m)
-
-    extension [T](xs: Seq[T])
-      def traverse[U](f: T => M[U]): M[Seq[U]] = ???
-
-  import M.*
+  import C.*
 
   /**
     * Evaluate a MiniTalk abstract syntax tree and produce an object
@@ -36,7 +21,7 @@ import scala.annotation.tailrec
     * @param expr an expression to be evaluated
     * @return the Value representing the resulting object
     */
-  def eval(expr: Expr): M[Value] = {
+  def eval(expr: Expr): C[Value] = {
     import Expr.*
 
     expr match
@@ -58,22 +43,25 @@ import scala.annotation.tailrec
       case UnOp(left, op) =>
         for
           receiver <- eval(left)
+          result <- receiver.receive(Message(op, Nil))
         yield
-          receiver.receive(Message(op, Nil))
+          result
 
       case BinOp(left, op, right) =>
         for
           receiver <- eval(left)
           v <- eval(right)
+          result <- receiver.receive(Message(op, Seq(v)))
         yield
-          receiver.receive(Message(op, Seq(v)))
+          result
 
       case KeyOp(left, op, args) =>
         for
           receiver <- eval(left)
           vs <- args.traverse(eval)
+          result <- receiver.receive(Message(op, vs))
         yield
-          receiver.receive(Message(op, vs))
+          result
 
       case Assign(left, right) =>
         // TODO
@@ -89,23 +77,28 @@ import scala.annotation.tailrec
   }
 
   @tailrec
-  def loop: Unit = {
+  def loop(state: State): Unit = {
     print("> ")
     val input = readLine()
 
     if input == null || input == "exit" then
       println("Goodbye")
     else if input == "" then
-      loop
+      loop(state)
     else
       Parser(input) match
         case Right(expr) =>
-          val result = eval(expr) // TODO run the M[] here
-          println(result)
+          eval(expr)(state) match
+            case Right(result, state2) =>
+              println(result)
+              loop(state2)
+            case Left(error) =>
+              println("Error: " + error)
+              loop(state)
         case Left(message) =>
           println("Error: " + message)
-      loop
+          loop(state)
   }
 
-  loop
+  loop(State(predef))
 }
