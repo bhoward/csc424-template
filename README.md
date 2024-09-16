@@ -25,7 +25,9 @@ It is based on a template project designed for people using the Doodle library f
 3. Run `sbt` (if you already have SBT installed), `./sbt.sh` (OS X and Linux) or `sbt.bat` (Windows) to start SBT.
 4. Type `run` in SBT to run the @main method, or `console` if you want to explore in an interactive console, or `test` to run Scala unit tests.
 
-5. To run JavaScript unit tests, type `npm test` at the terminal prompt (_not_ the SBT prompt; use `exit` to get out of SBT if it is running).
+5. To run JavaScript unit tests, type `npm test` at the terminal prompt (_not_ the SBT prompt; use `exit` to get out of SBT if it is running). **Before you do this the first time, you might have to run `npm install` to
+install any needed dependencies.**
+
 6. To run a JavaScript file with a main method, run `node <filename>`. For example, `node src/main/js/assignment1/Group.js`.
 
 7. You can also run this repository in a GitHub Codespace.

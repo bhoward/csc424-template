@@ -28,3 +28,4 @@ metals.sbt
 # other
 .sbt-hydra-history
 repository
+node_modules/
