@@ -1,11 +1,53 @@
 package minitalk
 
-class State(env: Map[String, Value]):
-  def lookup(name: String, default: Value) = env.getOrElse(name, default)
+class Cell[T](var contents: T)
 
+type Env = Map[String, Value]
+type Scope = Map[String, Cell[Value]]
 type Error = String
 
-class C[T](c: State => Either[Error, (T, State)]):
+class State(predef: Env, scopes: List[Scope] = Nil):
+  private def findCell(name: String): Option[Cell[Value]] = {
+    def aux(ss: List[Scope]): Option[Cell[Value]] = {
+      ss match
+        case Nil => None
+        case head :: tail =>
+          if head.contains(name)
+          then Some(head(name))
+          else aux(tail)
+    }
+
+    aux(scopes)
+  }
+
+  def lookup(name: String): Either[Error, Value] = {
+    findCell(name).map(cell => Right(cell.contents))
+      .getOrElse(predef.get(name).map(value => Right(value))
+        .getOrElse(Left(s"variable not found: $name")))
+  }
+
+  def bind(name: String, value: Value): Either[Error, State] = {
+    scopes match
+      case Nil => Left(s"no local scope for binding to $name")
+      case head :: tail =>
+        Right(State(predef, (head + (name -> Cell(value))) :: tail))
+  }
+
+  def update(name: String, value: Value): Either[Error, Unit] = {
+    findCell(name). match
+      case None => Left(s"variable not found: $name")
+      case Some(cell) => Right(cell.contents = value)
+  }
+
+  def pushScope: State = State(predef, Map() :: scopes)
+
+  def popScopt: Either[Error, State] = {
+    scopes match
+      case Nil => Left("no local scope to pop")
+      case head :: tail => Right(State(predef, tail))
+  }
+
+class C[+T](c: State => Either[Error, (T, State)]):
   def apply(state: State): Either[Error, (T, State)] = c(state)
 
   def map[U](f: T => U): C[U] = C { state =>
@@ -25,8 +67,16 @@ object C:
     Right(t, state)
   }
 
-  def lookup(name: String, default: Value): C[Value] = C { state =>
-    Right(state.lookup(name, default), state)
+  def lookup(name: String): C[Value] = C { state =>
+    state.lookup(name).map(value => (value, state))
+  }
+
+  def bind(name: String, value: Value): C[Unit] = C { state =>
+    state.bind(name, value).map(state => ((), state))
+  }
+
+  def update(name: String, value: Value): C[Unit] = C { state =>
+    state.update(name, value).map(_ => ((), state))
   }
 
   extension [T](xs: Seq[T])

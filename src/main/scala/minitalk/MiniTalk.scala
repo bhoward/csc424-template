@@ -38,7 +38,7 @@ import scala.annotation.tailrec
         pure(StrValue(value))
 
       case Ident(name) =>
-        lookup(name, NullValue)
+        lookup(name)
 
       case UnOp(left, op) =>
         for
@@ -64,12 +64,16 @@ import scala.annotation.tailrec
           result
 
       case Assign(left, right) =>
-        // TODO
-        eval(right)
+        for
+          result <- eval(right)
+          _ <- update(left, result)
+        yield
+          result
 
       case Block(exprs) =>
         pure(BlockValue(() =>
           for
+            // TODO handle params and locals
             vs <- exprs.traverse(eval)
           yield
             if vs.nonEmpty then vs.last else NullValue
