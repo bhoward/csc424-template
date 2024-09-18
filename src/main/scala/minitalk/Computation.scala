@@ -41,7 +41,7 @@ class State(predef: Env, scopes: List[Scope] = Nil):
 
   def pushScope: State = State(predef, Map() :: scopes)
 
-  def popScopt: Either[Error, State] = {
+  def popScope: Either[Error, State] = {
     scopes match
       case Nil => Left("no local scope to pop")
       case head :: tail => Right(State(predef, tail))
@@ -67,16 +67,32 @@ object C:
     Right(t, state)
   }
 
+  def closure[T](f: State => T): C[T] = C { state =>
+    Right(f(state), state)
+  }
+
   def lookup(name: String): C[Value] = C { state =>
     state.lookup(name).map(value => (value, state))
   }
 
   def bind(name: String, value: Value): C[Unit] = C { state =>
-    state.bind(name, value).map(state => ((), state))
+    state.bind(name, value).map(state2 => ((), state2))
   }
 
   def update(name: String, value: Value): C[Unit] = C { state =>
     state.update(name, value).map(_ => ((), state))
+  }
+
+  def pushScope: C[Unit] = C { state =>
+    Right((), state.pushScope)
+  }
+
+  def popScope: C[Unit] = C { state =>
+    state.popScope.map(state2 => ((), state2))
+  }
+
+  def swapState(state2: State): C[State] = C{ state =>
+    Right(state, state2)
   }
 
   extension [T](xs: Seq[T])

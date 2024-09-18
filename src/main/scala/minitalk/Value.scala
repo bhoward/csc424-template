@@ -274,13 +274,22 @@ case object FalseValue extends BoolValue:
         super.receive(msg)
   }
 
-case class BlockValue(body: () => C[Value]) extends Value:
+case class BlockValue(body: Seq[Value] => C[Value]) extends Value:
   override def toString: String = "<block>"
 
   override def receive(msg: Message): C[Value] = {
     msg match
-      case Message("value", Nil) =>
-        body()
+      case Message("value", args) =>
+        body(args)
+      case Message("value:", args) =>
+        body(args)
+      case Message("value:value:", args) =>
+        body(args)
+      case Message("value:value:value:", args) =>
+        body(args)
+      case Message("value:value:value:value:", args) =>
+        body(args)
+      // Assumes you will never have more than four arguments...
 
       case _ =>
         super.receive(msg)

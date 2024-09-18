@@ -45,7 +45,16 @@ object Parser:
     char.map(Expr.makeChar) |
     string.map(StrLit(_))
 
-  def block: P[Expr] = "[" ~> expr.repsep(".").map(Block(_)) <~ "]"
+  def block: P[Expr] =
+    "[" ~> (params.?.map(_.getOrElse(Seq()))
+      ~ temps.?.map(_.getOrElse(Seq()))
+      ~ expr.repsep(".")).map { case ((ps, ts), body) =>
+        Block(ps, ts, body)
+      } <~ "]"
+
+  def params: P[Seq[String]] = (":" ~> ident).rep1 <~ "|"
+
+  def temps: P[Seq[String]] = "|" ~> ident.rep <~ "|"
 
   // Lexical Syntax
   def keySelector: P[String] = "[A-Za-z][A-Za-z0-9]*:".r

@@ -13,7 +13,7 @@ enum Expr:
   case BinOp(left: Expr, op: String, right: Expr)
   case KeyOp(left: Expr, op: String, args: Seq[Expr])
   case Assign(left: String, right: Expr)
-  case Block(exprs: Seq[Expr])
+  case Block(params: Seq[String], temps: Seq[String], exprs: Seq[Expr])
 
 object Expr:
   def makeNumber(literal: String): Expr = {

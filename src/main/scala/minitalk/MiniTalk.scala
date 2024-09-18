@@ -70,11 +70,16 @@ import scala.annotation.tailrec
         yield
           result
 
-      case Block(exprs) =>
-        pure(BlockValue(() =>
+      case Block(params, temps, exprs) =>
+        closure(state => BlockValue((args: Seq[Value]) =>
           for
-            // TODO handle params and locals
+            save <- swapState(state)
+            _ <- pushScope
+            _ <- params.zip(args).traverse(bind) // will stop at the shorter length
+            _ <- temps.map(name => (name, NullValue)).traverse(bind)
             vs <- exprs.traverse(eval)
+            _ <- popScope
+            _ <- swapState(save)
           yield
             if vs.nonEmpty then vs.last else NullValue
         ))

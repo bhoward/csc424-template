@@ -8,13 +8,13 @@ trait Parsers:
   def whitespace: P[Any]
 
   def succeed[T](result: T): P[T] =
-    in => Right((result, in))
+    in => Right(result, in)
 
   def fail[T](message: String): P[T] =
     in => Left(message)
 
   def end: P[Unit] = {
-    case "" => Right(((), ""))
+    case "" => Right((), "")
     case s => Left(s"expected end of input at $s")
   }
 
@@ -23,7 +23,7 @@ trait Parsers:
       Left(message)
     case s =>
       if pred(s.charAt(0)) then
-        Right((s.charAt(0), s.substring(1)))
+        Right(s.charAt(0), s.substring(1))
       else
         Left(message)
   }
@@ -81,6 +81,9 @@ trait Parsers:
         case (o, rest) => (f(o), rest)
       }
 
+    def ? : P[Option[T]] =
+      p.map(Some(_)) | succeed(None)
+
     def rep: P[List[T]] =
       rep1 | succeed(Nil)
 
@@ -95,7 +98,7 @@ trait Parsers:
 
     def repsep(q: => P[Any]): P[List[T]] =
       repsep1(q) | succeed(Nil)
-      
+
     def repsep1(q: => P[Any]): P[List[T]] =
       (p ~ (q ~> p).rep).map(_ :: _)
 
