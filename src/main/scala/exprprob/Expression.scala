@@ -1,3 +1,6 @@
+// Based on https://www.slideshare.net/slideshow/the-expression-problem-part-2/251441361
+// which was based on an earlier presentation by Ralf Laemmel using Haskell
+
 package exprprob
 
 case class Const(value: Int)
