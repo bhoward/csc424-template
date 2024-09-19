@@ -86,12 +86,17 @@ given [L <: Expr : Show, R <: Expr : Show]: Show[Mul[L, R]] with
   println(eval(e))
   println(e.show)
 
+  // In this version, we can write foo: Int => Expr because Expr
+  // is a real type
   def foo(n: Int): Expr = n match
     case 0 => Const(0)
     case _ => Add(foo(n - 1), Const(1))
 
   val x = foo(4)
   println(x)
+  // However, the following are still not possible, because just having
+  // a value of type Expr does not give us access at compile time to the
+  // appropriate evidence to resolve which instance it is
   // println(eval(x))
   // println(x.show)
 }

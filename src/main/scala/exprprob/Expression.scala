@@ -92,4 +92,15 @@ given [L:Expr:Show, R:Expr:Show]: Show[Mul[L, R]] with
   val e = Neg(Add(Const(15), Neg(Mul(Const(19), Const(3)))))
   println(eval(e))
   println(e.show)
+
+// The following does not work because there is no type "Expr",
+// only a type class Expr[T] giving "evidence" that T is an expression
+//   def foo(n: Int): Expr = n match
+//     case 0 => Const(0)
+//     case _ => Add(foo(n - 1), Const(1))
+
+//   val x = foo(4)
+//   println(x)
+//   println(eval(x))
+//   println(x.show)
 }
