@@ -3,10 +3,12 @@
 
 package exprprob
 
+trait Expr[T]
+
+// Initial list of variants
+
 case class Const(value: Int)
 case class Add[L, R](left: L, right: R)
-
-trait Expr[T]
 
 given Expr[Const] with {}
 given [L:Expr, R:Expr]: Expr[Add[L, R]] with {}
@@ -47,24 +49,47 @@ given Show[Const] with
   extension (c: Const) def show: String = c.value.toString
 
 given [L:Expr:Show, R:Expr:Show]: Show[Add[L, R]] with
-  extension (a: Add[L, R]) def show: String = {
-    val leftShow = summon[Show[L]].show
-    val rightShow = summon[Show[R]].show
-    s"(${leftShow(a.left)} + ${rightShow(a.right)})"
-  }
+  extension (a: Add[L, R])
+    def show: String = {
+      val leftShow = summon[Show[L]].show
+      val rightShow = summon[Show[R]].show
+      s"(${leftShow(a.left)} + ${rightShow(a.right)})"
+    }
 
 given [T:Expr:Show]: Show[Neg[T]] with
-  extension (a: Neg[T]) def show: String = {
-    val argShow = summon[Show[T]].show
-    s"-${argShow(a.t)}"
+  extension (a: Neg[T])
+    def show: String = {
+      val argShow = summon[Show[T]].show
+      s"-${argShow(a.t)}"
+    }
+
+// Add mul variant
+
+case class Mul[L, R](left: L, right: R)
+
+given [L:Expr, R:Expr]: Expr[Mul[L, R]] with {}
+
+given [L:Expr:Eval, R:Expr:Eval]: Eval[Mul[L, R]] with
+  def eval(t: Mul[L, R]): Int = {
+    val leftEval = summon[Eval[L]].eval
+    val rightEval = summon[Eval[R]].eval
+    leftEval(t.left) * rightEval(t.right)
   }
+
+given [L:Expr:Show, R:Expr:Show]: Show[Mul[L, R]] with
+  extension (a: Mul[L, R])
+    def show: String = {
+      val leftShow = summon[Show[L]].show
+      val rightShow = summon[Show[R]].show
+      s"(${leftShow(a.left)} * ${rightShow(a.right)})"
+    }
 
 // Example of use:
 
 @main def exprDemo: Unit = {
   def eval[T:Expr:Eval](t: T): Int = summon[Eval[T]].eval(t)
 
-  val e = Neg(Add(Const(17), Neg(Const(59))))
+  val e = Neg(Add(Const(15), Neg(Mul(Const(19), Const(3)))))
   println(eval(e))
   println(e.show)
 }
