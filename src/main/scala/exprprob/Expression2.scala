@@ -78,15 +78,23 @@ object Mul:
       s"(${leftShow(a.left)} * ${rightShow(a.right)})"
     }
 
+// Add extension syntax
+object ExprSyntax:
+  extension [E <: Expr: Eval](e: E) def eval: Int = summon[Eval[E]].eval(e)
+  extension [E <: Expr: Show](e: E) def show: String = summon[Show[E]].show(e)
+
 // Example of use:
 
 @main def exprDemo2: Unit = {
-  def eval[E <: Expr: Eval](e: E): Int = summon[Eval[E]].eval(e)
-  extension [E <: Expr: Show](e: E) def show: String = summon[Show[E]].show(e)
+  import ExprSyntax.*
 
   val e = Neg(Add(Const(15), Neg(Mul(Const(19), Const(3)))))
-  println(eval(e))
+  println(e.eval)
   println(e.show)
+
+  // These also work?
+  println(eval(e))
+  println(show(e))
 
   // In this version, we can write foo: Int => Expr because Expr
   // is a real type
@@ -99,6 +107,8 @@ object Mul:
   // However, the following are still not possible, because just having
   // a value of type Expr does not give us access at compile time to the
   // appropriate evidence to resolve which instance it is:
-  // println(eval(x))
+  // println(x.eval)
   // println(x.show)
+  // println(eval(x))
+  // println(show(x))
 }
