@@ -13,5 +13,6 @@ console / initialCommands := """
 libraryDependencies ++= Seq(
   "org.creativescala" %% "doodle" % "0.23.0",
   "com.lihaoyi" %% "fastparse" % "3.1.1",
-  "org.scalatest" %% "scalatest" % "3.2.19" % "test"
+  "org.scalatest" %% "scalatest" % "3.2.19" % "test",
+  "org.typelevel" %% "cats-core" % "2.12.0"
 )
