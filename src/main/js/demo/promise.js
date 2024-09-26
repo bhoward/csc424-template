@@ -125,31 +125,31 @@ demo()
 );
 
 // Using callbacks...
+function delayedValueCB(time, value, cb) {
+  setTimeout(() => cb(null, value), time);
+}
+  
+function delayedFailureCB(time, error, cb) {
+  setTimeout(() => cb(error), time)
+}
+  
 function demo2(ret) {
-  (cb => setTimeout(() => cb(null, "Step 1"), 2000))(
-    (err, v1) => {
-      console.log(v1);
-      (cb => setTimeout(() => cb(null, "Step 2"), 2000))(
-        (err, v2) => {
-          console.log(v2);
-          (cb => setTimeout(() => cb("Oops!"), 2000))(
-            (err, v3) => {
-              if (!err) {
-                (cb => setTimeout(() => cb(null, "Profit!"), 2000))(
-                  (err, v4) => {
-                    ret(v4);
-                  }
-                )
-              } else {
-                console.log("Error: " + err);
-                ret("We failed");
-              }
-            }
-          )
+  delayedValueCB(2000, "Step 1", (err, v1) => {
+    console.log(v1);
+    delayedValueCB(2000, "Step 2", (err, v2) => {
+      console.log(v2);
+      delayedFailureCB(2000, "Oops!", (err, v3) => {
+        if (!err) {
+          delayedValueCB(2000, "Profit!", (err, v4) => {
+            ret(v4);
+          });
+        } else {
+          console.log("Error: " + err);
+          ret("We failed");
         }
-      )
-    }
-  )
+      });
+    });
+  });
 }
 
 demo2(function(v) {
