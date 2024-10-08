@@ -1,13 +1,13 @@
 // Logging proxy
 function logging(target) {
     return new Proxy(target, {
-        get: function(target, prop, self) {
-            console.log(`GET: ${JSON.stringify({target, prop})}`);
+        get: function (target, prop, self) {
+            console.log(`GET: ${JSON.stringify({ target, prop })}`);
             return Reflect.get(target, prop, target);
         },
 
-        set: function(target, prop, value, self) {
-            console.log(`SET: ${JSON.stringify({target, prop, value})}`);
+        set: function (target, prop, value, self) {
+            console.log(`SET: ${JSON.stringify({ target, prop, value })}`);
             return Reflect.set(target, prop, value, target);
         },
     });
@@ -42,6 +42,10 @@ function main() {
     for (let key in demo) {
         console.log(`${key} -> ${demo[key]}`);
     }
+
+    const f = createTimingProxy({fib: fibonacci});
+    console.log(f.fib(100));
+    console.log(f.fib(100));
 }
 
 class Demo2 extends Demo {
@@ -70,6 +74,45 @@ function logging2(target) {
         },
     });
     return new Proxy(target, handler);
+}
+
+let fibonacci = n => {
+    if (n <= 1) {
+        return n;
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+fibonacci = new Proxy(fibonacci, {
+    cache: {},
+    apply(target, thisArg, args) {
+        const n = args[0];
+        if (this.cache[n]) {
+            return this.cache[n];
+        }
+        const result = target(n);
+        this.cache[n] = result;
+        return result;
+    }
+});
+
+function createTimingProxy(target) {
+    return new Proxy(target, {
+        get(target, prop, receiver) {
+            if (typeof target[prop] === 'function') {
+                return function (...args) {
+                    const start = performance.now();
+                    const result = target[prop].apply(this, args);
+                    const end = performance.now();
+
+                    console.log(`Function ${prop} took ${end - start} ms`);
+                    return result;
+                };
+            } else {
+                return Reflect.get(target, prop, receiver);
+            }
+        }
+    });
 }
 
 if (require.main === module) {
