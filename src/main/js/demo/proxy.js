@@ -34,18 +34,25 @@ class Demo {
 }
 
 function main() {
-    const demo = logging(new Demo('Joe', 3));
+    const demo = logging2(new Demo('Joe', 3));
     console.log(demo.name);
     console.log(demo.age);
     demo.age = 42; // no effect
     demo.birthdays(5);
+
+    demo.foo = 42;
     for (let key in demo) {
         console.log(`${key} -> ${demo[key]}`);
     }
+    delete demo.foo;
+    console.log(Object.getOwnPropertyDescriptors(demo));
 
-    const f = createTimingProxy({fib: fibonacci});
+    const f = createTimingProxy({ fib: fibonacci });
     console.log(f.fib(100));
     console.log(f.fib(100));
+
+    mmDemo.foo();
+    mmDemo.bar("baz");
 }
 
 class Demo2 extends Demo {
@@ -114,6 +121,25 @@ function createTimingProxy(target) {
         }
     });
 }
+
+
+const MissingMethodProxy = new Proxy({}, {
+    get(target, prop, self) {
+        return (...args) => Reflect.apply(self.missingMethod, self, [prop, ...args]);
+    }
+});
+
+const mmDemo = {
+    missingMethod: function(name, ...args) {
+        console.log(`I don't know how to do ${name}(${args})!`);
+    },
+
+    foo: function() {
+        console.log("Hello world");
+    },
+};
+
+Object.setPrototypeOf(mmDemo, MissingMethodProxy);
 
 if (require.main === module) {
     main();
