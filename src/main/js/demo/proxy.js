@@ -51,6 +51,7 @@ function main() {
     console.log(f.fib(100));
     console.log(f.fib(100));
 
+    const mmDemo = new MMDemo(17);
     mmDemo.foo();
     mmDemo.bar("baz");
 }
@@ -122,24 +123,25 @@ function createTimingProxy(target) {
     });
 }
 
+function MMDemo(id) {
+    this.id = id;
 
-const MissingMethodProxy = new Proxy({}, {
+    this.missingMethod = function (name, ...args) {
+        console.log(`MMDemo #${id} doesn't know how to do ${name}(${args})!`);
+    };
+
+    this.foo = function () {
+        console.log(`Hello world from MMDemo #${id}`);
+    };
+
+    return this;
+};
+
+MMDemo.prototype = new Proxy({}, {
     get(target, prop, self) {
         return (...args) => Reflect.apply(self.missingMethod, self, [prop, ...args]);
     }
 });
-
-const mmDemo = {
-    missingMethod: function(name, ...args) {
-        console.log(`I don't know how to do ${name}(${args})!`);
-    },
-
-    foo: function() {
-        console.log("Hello world");
-    },
-};
-
-Object.setPrototypeOf(mmDemo, MissingMethodProxy);
 
 if (require.main === module) {
     main();
