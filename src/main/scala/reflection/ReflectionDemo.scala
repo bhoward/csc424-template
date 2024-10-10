@@ -1,13 +1,15 @@
 package reflection
 
 import cats.instances.double
+import java.lang.reflect.Method
+import assignment2.Parser.id
 
 trait Thing:
+    def name: String
     def id: Int
+    def extendedName = s"$name (#$id)"
 
 case class Demo(name: String, id: Int) extends Thing:
-    val extendedName = s"$name (#$id)"
-
     private var fave: Double = math.Pi
 
     def greet(message: String): Unit = {
@@ -81,4 +83,30 @@ def tryit(): Unit = {
     fave.setDouble(thing, Math.TAU)
     fave.setAccessible(false)
     demo.greet("Hello again")
+
+    val proxied = ThingProxy.create(17)
+    println(proxied.name)
+    println(proxied.id)
+    println(proxied.extendedName)
 }
+
+// Based on https://www.kdgregory.com/index.php?page=junit.proxy
+import java.lang.reflect.{InvocationHandler, Proxy}
+
+class ThingProxy(id: Int) extends InvocationHandler:
+    override def invoke(proxy: Object, method: Method, args: Array[Object]): Object = {
+        if method.getName() == "id" then
+            Integer(id)
+        else if method.getName() == "name" then
+            "No name"
+        else
+            throw UnsupportedOperationException(method.getName())
+    }
+
+object ThingProxy:
+    def create(id: Int): Thing =
+        Proxy.newProxyInstance(
+            this.getClass().getClassLoader(),
+            Array(classOf[Thing]),
+            ThingProxy(id)
+        ).asInstanceOf[Thing]
