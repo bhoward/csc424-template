@@ -10,8 +10,14 @@ import fastparse.*, fastparse.NoWhitespace.*
 object Parser:
   def apply(input: String): Either[String, DOM] = {
     parse(input, { case given P[_] => Parser.top }) match
-    case Parsed.Success(value, _) => Right(value)
-    case result: Parsed.Failure => Left(result.msg)
+      case Parsed.Success(value, _) => Right(value)
+      case result: Parsed.Failure => Left(result.msg)
+  }
+
+  def apply(input: Iterator[String]): Either[String, DOM] = {
+    parse(input, { case given P[_] => Parser.top }) match
+      case Parsed.Success(value, _) => Right(value)
+      case result: Parsed.Failure => Left(result.msg)
   }
   
   def top[$: P]: P[DOM] = P ( Start ~ ws ~ element ~ ws ~ End )

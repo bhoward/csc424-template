@@ -2,8 +2,16 @@ package assignment3
 
 type ErrOr[T] = Either[String, T]
 
-object HTMLParser:
+object DOMtoHTML:
   def apply(input: String): ErrOr[HTML] = {
+    for
+      dom <- Parser(input)
+      html <- parseHTML(dom)
+    yield
+      html
+  }
+
+  def apply(input: Iterator[String]): ErrOr[HTML] = {
     for
       dom <- Parser(input)
       html <- parseHTML(dom)
@@ -46,15 +54,11 @@ object HTMLParser:
     dom match
       case Element("body", _, children) =>
         for
-          content <- collect(children, parseFlow)
+          content <- collect(children, parseGrouping)
         yield
           Body(content)
       case _ =>
         Left("Expected <body> element")
-  }
-
-  def parseFlow(dom: DOM): ErrOr[FlowContent] = {
-    parseGrouping(dom) orElse parsePhrasing(dom)
   }
 
   def parseGrouping(dom: DOM): ErrOr[GroupingContent] = {
@@ -76,21 +80,6 @@ object HTMLParser:
           content <- collect(children, parsePhrasing)
         yield
           H3(content)
-      case Element("h4", _, children) =>
-        for
-          content <- collect(children, parsePhrasing)
-        yield
-          H4(content)
-      case Element("h5", _, children) =>
-        for
-          content <- collect(children, parsePhrasing)
-        yield
-          H5(content)
-      case Element("h6", _, children) =>
-        for
-          content <- collect(children, parsePhrasing)
-        yield
-          H6(content)
       case Element("p", _, children) =>
         for
           content <- collect(children, parsePhrasing)
@@ -98,9 +87,29 @@ object HTMLParser:
           P(content)
       case Element("hr", _, Seq()) =>
         Right(HR)
-      // TODO ol, ul, table
+      case Element("ol", _, children) =>
+        for
+          items <- collect(children, parseItem)
+        yield
+          OL(items)
+      case Element("ul", _, children) =>
+        for
+          items <- collect(children, parseItem)
+        yield
+          UL(items)
       case _ =>
         Left("Expected grouping element")
+  }
+
+  def parseItem(dom: DOM): ErrOr[Item] = {
+    dom match
+      case Element("li", _, children) =>
+        for
+          content <- collect(children, parsePhrasing) // TODO allow grouping?
+        yield
+          Item(content)
+      case _ =>
+        Left("Expected <li>")
   }
 
   def parsePhrasing(dom: DOM): ErrOr[PhrasingContent] = {
@@ -119,8 +128,7 @@ object HTMLParser:
           Strong(content)
       case Element("a", attributes, children) =>
         for
-          href <- attributes.find(_.name == "href")
-            .map(_.value).toRight("Expected href")
+          href <- extractRequired(attributes, "href")
           content <- collect(children, parsePhrasing)
         yield
           A(href, content)
@@ -143,6 +151,14 @@ object HTMLParser:
     }
   }
 
+  def extractRequired(attributes: Seq[Attribute], name: String): ErrOr[String] = {
+    extractOptional(attributes, name).toRight(s"Expected $name")
+  }
+
+  def extractOptional(attributes: Seq[Attribute], name: String): Option[String] = {
+    attributes.find(_.name == name).map(_.value)
+  }
+
 @main def htmlTest(): Unit = {
   import scala.io.StdIn.readLine
   import scala.annotation.tailrec
@@ -157,7 +173,7 @@ object HTMLParser:
     else if input == "" then
       loop
     else
-      HTMLParser(input) match
+      DOMtoHTML(input) match
         case Right(html) =>
           println(html)
         case Left(message) =>
