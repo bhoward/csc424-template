@@ -1,6 +1,8 @@
 package assignment3
 
+import java.io.File
 import fastparse.*, fastparse.NoWhitespace.*
+import scala.util.Using, scala.io.Source
 
 /**
   * This is a parser for a small subset of HTML.
@@ -14,10 +16,12 @@ object Parser:
       case result: Parsed.Failure => Left(result.msg)
   }
 
-  def apply(input: Iterator[String]): Either[String, DOM] = {
-    parse(input, { case given P[_] => Parser.top }) match
-      case Parsed.Success(value, _) => Right(value)
-      case result: Parsed.Failure => Left(result.msg)
+  def apply(inFile: File): Either[String, DOM] = {
+    Using.resource(Source.fromFile(inFile)) { input =>
+      parse(input.getLines(), { case given P[_] => Parser.top }) match
+        case Parsed.Success(value, _) => Right(value)
+        case result: Parsed.Failure => Left(result.msg)
+    }
   }
   
   def top[$: P]: P[DOM] = P ( Start ~ ws ~ element ~ ws ~ End )
