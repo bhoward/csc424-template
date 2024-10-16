@@ -22,6 +22,5 @@ enum PhrasingContent:
   case Strong(children: Seq[PhrasingContent])
   case A(href: String, children: Seq[PhrasingContent])
   case Txt(text: String)
-  case BR
 
 case class Item(children: Seq[PhrasingContent])

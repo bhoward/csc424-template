@@ -4,8 +4,7 @@ title: Title(Demo)
 
 # Demo File
 
-This is a *demonstration*. It contains some            **text** with formatting  
-            (and a [link](https://www.google.com/)).        
+This is a *demonstration*. It contains some            **text** with formatting            (and a [link](https://www.google.com/)).        
 
 Here is a second paragraph.
 

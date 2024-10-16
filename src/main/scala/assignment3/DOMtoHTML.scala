@@ -1,5 +1,7 @@
 package assignment3
 
+import java.io.File
+
 type ErrOr[T] = Either[String, T]
 
 object DOMtoHTML:
@@ -11,9 +13,9 @@ object DOMtoHTML:
       html
   }
 
-  def apply(input: Iterator[String]): ErrOr[HTML] = {
+  def apply(inFile: File): ErrOr[HTML] = {
     for
-      dom <- Parser(input)
+      dom <- Parser(inFile)
       html <- parseHTML(dom)
     yield
       html
@@ -132,8 +134,6 @@ object DOMtoHTML:
           content <- collect(children, parsePhrasing)
         yield
           A(href, content)
-      case Element("br", _, Seq()) =>
-        Right(BR)
       case Text(content) =>
         Right(Txt(content))
       case _ =>
@@ -159,7 +159,7 @@ object DOMtoHTML:
     attributes.find(_.name == name).map(_.value)
   }
 
-@main def htmlTest(): Unit = {
+@main def replHTMLTest(): Unit = {
   import scala.io.StdIn.readLine
   import scala.annotation.tailrec
 
@@ -182,4 +182,14 @@ object DOMtoHTML:
   }
 
   loop
+}
+
+@main def fileHTMLTest(): Unit = {
+  val inFile = new File("src/main/scala/assignment3/demo.html")
+  
+  DOMtoHTML(inFile) match
+        case Right(html) =>
+          println(html)
+        case Left(message) =>
+          println("ErrOr: " + message)
 }
