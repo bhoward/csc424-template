@@ -54,6 +54,9 @@ sealed trait MusicEvent:
     loop(repetitions, this)
   }
 
+extension (repetitions: Int)
+  def *(event: MusicEvent): MusicEvent = event.repeat(repetitions)
+
 final case class Note(
     pitch: Pitch,
     duration: Duration = Duration.Quarter,
@@ -124,7 +127,7 @@ def perform(event: MusicEvent): Unit = {
         render(right, mid)
   }
 
-  render(event, 0)
+  render(event, 1)
 
   val sequencer = MidiSystem.getSequencer()
   sequencer.open()
