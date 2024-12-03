@@ -60,18 +60,159 @@ const typeo = Rel((env, expr, t) => conde(
     ])
 ));
 
-const id = makeLambda("x", makeVar("x"));
+// Parsing
+// S -->  Fun $
+// Fun -->  Var => Fun  |  Expr
+// Expr -->  Expr + Term  |  Term
+// Term -->  Term * Factor  |  Factor
+// Factor -->  Var  |  Num  |  Factor ( Fun )  |  ( Fun )
+const parseo = Rel((source, expr) =>
+    exist(rest => [
+        funo(source, expr, rest),
+        nilo(rest)
+    ])
+);
 
-const idT = run()(t => typeo([], id, t));
+const funo = Rel((source, expr, rest) => conde(
+    exist((param, body, r1, r2) => [
+        varo(source, makeVar(param), r1),
+        matcho(r1, "=>", r2),
+        funo(r2, body, rest),
+        eq(expr, makeLambda(param, body))
+    ]),
+    expro(source, expr, rest)
+));
 
+const expro = Rel((source, expr, rest) =>
+    exist((left, r1) => [
+        termo(source, left, r1),
+        eresto(r1, left, expr, rest)
+    ])
+);
+
+const eresto = Rel((source, left, expr, rest) => conde(
+    exist((right, app, r1, r2) => [
+        matcho(source, "+", r1),
+        termo(r1, right, r2),
+        eresto(r2, app, expr, rest),
+        eq(app, makeApply(makeApply(makeVar("+"), left), right))
+    ]),
+    [
+        eq(source, rest),
+        eq(left, expr)
+    ]
+));
+
+const termo = Rel((source, expr, rest) =>
+    exist((left, r1) => [
+        factoro(source, left, r1),
+        tresto(r1, left, expr, rest)
+    ])
+);
+
+const tresto = Rel((source, left, expr, rest) => conde(
+    exist((right, app, r1, r2) => [
+        matcho(source, "*", r1),
+        factoro(r1, right, r2),
+        tresto(r2, app, expr, rest),
+        eq(app, makeApply(makeApply(makeVar("*"), left), right))
+    ]),
+    [
+        eq(source, rest),
+        eq(left, expr)
+    ]
+));
+
+const factoro = Rel((source, expr, rest) => conde(
+    exist((left, r1) => [
+        varo(source, left, r1),
+        fresto(r1, left, expr, rest)
+    ]),
+    exist((left, r1) => [
+        numo(source, left, r1),
+        fresto(r1, left, expr, rest)
+    ]),
+    exist((left, r1, r2, r3) => [
+        matcho(source, "(", r1),
+        funo(r1, left, r2),
+        matcho(r2, ")", r3),
+        fresto(r3, left, expr, rest)
+    ])
+));
+
+const fresto = Rel((source, left, expr, rest) => conde(
+    exist((right, app, r1, r2, r3) => [
+        matcho(source, "(", r1),
+        funo(r1, right, r2),
+        matcho(r2, ")", r3),
+        fresto(r3, app, expr, rest),
+        eq(app, makeApply(left, right))
+    ]),
+    [
+        eq(source, rest),
+        eq(left, expr)
+    ]
+));
+
+const varo = Rel((source, expr, rest) =>
+    exist((v) => [
+        matcho(source, v, rest),
+        conde(
+            eq(v, "a"),
+            eq(v, "b"),
+            eq(v, "c"),
+            eq(v, "d"),
+            // Need to generalize this...
+        ),
+        eq(expr, makeVar(v))
+    ])
+);
+
+const numo = Rel((source, expr, rest) =>
+    exist((n) => [
+        matcho(source, n, rest),
+        conde(
+            eq(n, "0"),
+            eq(n, "1"),
+            eq(n, "2"),
+            eq(n, "3"),
+            // Need to generalize this...
+        ),
+        eq(expr, makeNum(n))
+    ])
+);
+
+const matcho = Rel((source, s, rest) =>
+    conso(s, rest, source)
+);
+
+// Demos
+const id = makeLambda("a", makeVar("a"));
+const idT = run()(t => typeo([], id, t))[0];
 console.log(idT);
 
 const base = [
     makeBind("+", makeFun(IntType, makeFun(IntType, IntType))),
+    makeBind("*", makeFun(IntType, makeFun(IntType, IntType))),
 ];
 
-const succ = makeLambda("n", makeApply(makeApply(makeVar("+"), makeVar("n")), makeNum(1)));
-
-const succT = run()(t => typeo(base, succ, t));
-
+const succ = makeLambda("a", makeApply(makeApply(makeVar("+"), makeVar("a")), makeNum("1")));
+const succT = run()(t => typeo(base, succ, t))[0];
 console.log(succT);
+
+const succ2 = run()(e => parseo([
+    "a", "=>", "a", "+", "1"
+], e))[0];
+console.log(JSON.stringify(succ2, null, 2));
+
+const ids = run(5)(e => typeo(base, e, idT));
+console.log(JSON.stringify(ids, null, 2));
+
+const pids = run(2)(s => exist(e => [
+    typeo(base, e, idT),
+    parseo(s, e)
+]));
+console.log(pids);
+
+const psucc = run(1)(s => parseo(s, succ));
+console.log(psucc);
