@@ -17,11 +17,28 @@ function makeLambda(param, body) {
     return { tag: "lam", param, body };
 }
 
+function printExpr(expr) {
+    switch (expr.tag) {
+        case "var": return expr.name;
+        case "num": return expr.value;
+        case "app": return `(${printExpr(expr.fun)}(${printExpr(expr.arg)}))`;
+        case "lam": return `(${expr.param} => ${printExpr(expr.body)})`;
+    }
+}
+
 // Types
 const IntType = { tag: "int" };
 
 function makeFun(arg, result) {
     return { tag: "fun", arg, result };
+}
+
+function printType(type) {
+    switch (type.tag) {
+        case "int": return "int";
+        case "fun": return `(${printType(type.arg)} -> ${printType(type.result)})`;
+        default: return type;
+    }
 }
 
 // Bindings
@@ -75,10 +92,10 @@ const parseo = Rel((source, expr) =>
 
 const funo = Rel((source, expr, rest) => conde(
     exist((param, body, r1, r2) => [
+        eq(expr, makeLambda(param, body)),
         varo(source, makeVar(param), r1),
         matcho(r1, "=>", r2),
-        funo(r2, body, rest),
-        eq(expr, makeLambda(param, body))
+        funo(r2, body, rest)
     ]),
     expro(source, expr, rest)
 ));
@@ -188,8 +205,10 @@ const matcho = Rel((source, s, rest) =>
 
 // Demos
 const id = makeLambda("a", makeVar("a"));
+console.log(printExpr(id), " has type:");
 const idT = run()(t => typeo([], id, t))[0];
-console.log(idT);
+console.log(printType(idT));
+console.log();
 
 const base = [
     makeBind("+", makeFun(IntType, makeFun(IntType, IntType))),
@@ -197,22 +216,30 @@ const base = [
 ];
 
 const succ = makeLambda("a", makeApply(makeApply(makeVar("+"), makeVar("a")), makeNum("1")));
+console.log(printExpr(succ), " has type:")
 const succT = run()(t => typeo(base, succ, t))[0];
-console.log(succT);
+console.log(printType(succT));
+console.log();
 
-const succ2 = run()(e => parseo([
-    "a", "=>", "a", "+", "1"
-], e))[0];
-console.log(JSON.stringify(succ2, null, 2));
+const input = ["a", "=>", "a", "+", "1"];
+console.log(input, " parses to:");
+const succ2 = run()(e => parseo(input, e))[0];
+console.log(printExpr(succ2));
+console.log();
 
+console.log("Five terms with type ", printType(idT), " are:");
 const ids = run(5)(e => typeo(base, e, idT));
-console.log(JSON.stringify(ids, null, 2));
+for (const e of ids) {
+    console.log(printExpr(e));
+}
+console.log();
 
-const pids = run(2)(s => exist(e => [
-    typeo(base, e, idT),
-    parseo(s, e)
-]));
-console.log(pids);
+console.log("Unparsing ", printExpr(id), " produces:");
+const pid = run(1)(s => parseo(s, id))[0];
+console.log(pid);
+console.log();
 
-const psucc = run(1)(s => parseo(s, succ));
+console.log("Unparsing ", printExpr(succ), " produces:");
+const psucc = run(1)(s => parseo(s, succ))[0];
 console.log(psucc);
+console.log();
